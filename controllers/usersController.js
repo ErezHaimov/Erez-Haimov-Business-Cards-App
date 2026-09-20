@@ -76,7 +76,8 @@ const updateUser = async (req, res, next) => {
 		const { error } = validateUser(req.body);
 		if (error) return res.status(400).send(error.details[0].message);
 
-		// חייבים להצפין את הסיסמה מחדש לפני שמירה, אחרת היא נשמרת כטקסט גלוי
+		// Password must be re-hashed before saving, otherwise it would be
+		// stored as plain text and overwrite the original hashed value.
 		const salt = await bcrypt.genSalt(10);
 		const hashedPassword = await bcrypt.hash(req.body.password, salt);
 
