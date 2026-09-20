@@ -3,7 +3,16 @@ const mongoose = require("mongoose");
 const userSchema = new mongoose.Schema({
 	name: {
 		first: { type: String, required: true, minlength: 2, maxlength: 256 },
-		middle: { type: String, minlength: 2, maxlength: 256, default: "" },
+		middle: {
+			type: String,
+			maxlength: 256,
+			default: "",
+			validate: {
+				validator: (v) => v === "" || v.length >= 2,
+				message:
+					"name.middle must be empty or at least 2 characters long",
+			},
+		},
 		last: { type: String, required: true, minlength: 2, maxlength: 256 },
 	},
 	phone: { type: String, required: true },

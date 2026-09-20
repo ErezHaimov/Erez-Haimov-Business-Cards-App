@@ -3,7 +3,7 @@ const User = require("../models/User");
 
 const createInitialUsers = async () => {
 	const count = await User.countDocuments();
-	if (count > 0) return; // כבר קיימים נתונים - לא כותבים שוב
+	if (count > 0) return; // users already exist - don't create duplicates
 
 	const salt = await bcrypt.genSalt(10);
 	const hashedPassword = await bcrypt.hash("Aa1234!", salt);

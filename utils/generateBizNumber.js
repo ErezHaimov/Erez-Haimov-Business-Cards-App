@@ -5,7 +5,7 @@ const generateBizNumber = async () => {
 	let exists = true;
 
 	while (exists) {
-		bizNumber = Math.floor(1000000 + Math.random() * 9000000); // 7 ספרות
+		bizNumber = Math.floor(1000000 + Math.random() * 9000000); // 7 digits
 		exists = await Card.findOne({ bizNumber });
 	}
 
