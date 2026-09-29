@@ -69,15 +69,15 @@ cards automatically on first run.
 
 ### Users
 
-| Method | URL            | Auth        | Description            |
-| ------ | -------------- | ----------- | ---------------------- |
-| POST   | `/users`       | Public      | Register a new user    |
-| POST   | `/users/login` | Public      | Log in, returns JWT    |
-| GET    | `/users`       | Admin       | Get all users          |
-| GET    | `/users/:id`   | Owner/Admin | Get a single user      |
-| PUT    | `/users/:id`   | Owner       | Edit user              |
-| PATCH  | `/users/:id`   | Owner       | Toggle business status |
-| DELETE | `/users/:id`   | Owner/Admin | Delete user            |
+| Method | URL            | Auth        | Description                                                 |
+| ------ | -------------- | ----------- | ----------------------------------------------------------- |
+| POST   | `/users`       | Public      | Register a new user                                         |
+| POST   | `/users/login` | Public      | Log in, returns JWT                                         |
+| GET    | `/users`       | Admin       | Get all users                                               |
+| GET    | `/users/:id`   | Owner/Admin | Get a single user                                           |
+| PUT    | `/users/:id`   | Owner       | Edit user (password is optional — only sent if changing it) |
+| PATCH  | `/users/:id`   | Owner       | Toggle business status                                      |
+| DELETE | `/users/:id`   | Owner/Admin | Delete user                                                 |
 
 ### Cards
 
@@ -97,20 +97,24 @@ Authenticated requests must include the header:
 x-auth-token: <your JWT token>
 ```
 
+## CORS
+
+Only origins listed in `middlewares/cors.js` (`allowedOrigins`) can call this API
+from a browser. Requests without an `Origin` header (Postman, curl, server-to-server
+calls) are always allowed. If you're building a frontend against this API, add its
+URL to the `allowedOrigins` array.
+
 ## Project Structure
 
 ```
 ├── app.js
 ├── config/mongodb/       # DB connection
 ├── initialData/          # seed data
-├── routes/                # Express routers
-├── controllers/           # route handlers / business logic
+├── routes/                 # Express routers
+├── controllers/            # route handlers / business logic
 ├── models/                 # Mongoose schemas
-├── validation/             # Joi schemas
-├── middlewares/            # auth, logging, error handling
-└── utils/                  # helper functions
+├── validation/              # Joi schemas (user, user update, login, card)
+├── middlewares/             # auth, cors, logging, 404, error handling
+├── error/                   # custom HttpError class
+└── utils/                   # helper functions
 ```
-
-## License
-
-MIT (or whatever license you choose)

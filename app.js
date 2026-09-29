@@ -15,15 +15,13 @@ const app = express();
 app.use(cors);
 app.use(express.json());
 app.use(morgan(":date[iso] :method :url :status :response-time ms"));
-
-
-app.use(fileLogger);	// File logger for requests with status >= 400.
+app.use(fileLogger);
 
 app.use("/users", usersRoutes);
 app.use("/cards", cardsRoutes);
 
 app.use(notFound);
-app.use(errorHandler);	// Must be the last middleware registered
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 8181;
 
