@@ -2,6 +2,8 @@ const bcrypt = require("bcryptjs");
 const User = require("../models/User");
 const { validateUser } = require("../validation/userValidation");
 const generateToken = require("../utils/generateToken");
+const { validateLogin } = require("../validation/loginValidation");
+const { validateUserUpdate } = require("../validation/userUpdateValidation");
 
 const registerUser = async (req, res, next) => {
 	try {
@@ -28,6 +30,9 @@ const registerUser = async (req, res, next) => {
 
 const loginUser = async (req, res, next) => {
 	try {
+		const { error } = validateLogin(req.body);
+		if (error) return res.status(400).send(error.details[0].message);
+
 		const { email, password } = req.body;
 		const user = await User.findOne({ email: email.toLowerCase() });
 		if (!user) return res.status(400).send("Invalid email or password");
@@ -73,17 +78,22 @@ const updateUser = async (req, res, next) => {
 				.status(403)
 				.send("Access denied. You can only edit your own profile.");
 
-		const { error } = validateUser(req.body);
+		const { error } = validateUserUpdate(req.body);
 		if (error) return res.status(400).send(error.details[0].message);
 
-		// Password must be re-hashed before saving, otherwise it would be
-		// stored as plain text and overwrite the original hashed value.
-		const salt = await bcrypt.genSalt(10);
-		const hashedPassword = await bcrypt.hash(req.body.password, salt);
+		const updateData = { ...req.body };
+
+		// Only hash and update the password if the client actually sent a new one
+		if (req.body.password) {
+			const salt = await bcrypt.genSalt(10);
+			updateData.password = await bcrypt.hash(req.body.password, salt);
+		} else {
+			delete updateData.password;
+		}
 
 		const updatedUser = await User.findByIdAndUpdate(
 			req.params.id,
-			{ ...req.body, password: hashedPassword },
+			updateData,
 			{ new: true },
 		).select("-password");
 

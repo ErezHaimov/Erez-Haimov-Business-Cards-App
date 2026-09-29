@@ -36,4 +36,4 @@ const userSchema = Joi.object({
 
 const validateUser = (user) => userSchema.validate(user);
 
-module.exports = { validateUser };
+module.exports = { userSchema, validateUser };
