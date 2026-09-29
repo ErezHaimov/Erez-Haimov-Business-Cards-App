@@ -13,7 +13,7 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
-app.use(morgan("dev"));
+app.use(morgan(":date[iso] :method :url :status :response-time ms"));
 
 // File logger for requests with status >= 400.
 // Must be registered before the routes, otherwise the "finish" listener
