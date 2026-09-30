@@ -237,15 +237,40 @@ On first run (empty database), 3 users and 3 cards are seeded automatically. Res
 
 ## Bonuses
 
-### 1. Unique `bizNumber` on card creation
+### 1. Change a card's business number (admin only)
 
-Every new card gets a randomly generated 7-digit `bizNumber`, guaranteed unique against existing cards (`utils/generateBizNumber.js`).
+`PATCH /cards/:id/biz-number` lets an **admin** assign any business number to a card,
+as long as no other card already holds it:
+
+```http
+PATCH /cards/<id>/biz-number
+x-auth-token: <admin token>
+Content-Type: application/json
+
+{ "bizNumber": 7654321 }
+```
+
+Returns `400` if the number is already taken by another card.
 
 ### 2. Daily file logger
 
-Every response with status `400` or above is appended to `logs/<YYYY-MM-DD>.log`, containing the request timestamp, status code, method, URL, and status message. A day with no failed requests creates no file.
+Every response with status **400 or above** is appended to a file inside `logs/`,
+named after that day's date (created on the first failure of the day, appended to
+afterward). Each line records the request timestamp, status code, method, URL, and
+error message.
 
-<!-- Add a "Blocking a user after 3 failed logins" section here once implemented -->
+### 3. Block a user after 3 failed logins
+
+A user who sends the **wrong password 3 times in a row** for the same email is
+blocked from logging in — even with the correct password — for the next **24 hours**:
+
+```json
+"Too many failed login attempts. Account blocked until 2026-09-22T19:40:17.813Z"
+```
+
+The response status is `403`. A **successful** login resets the failed-attempt
+counter, so two wrong passwords followed by the correct one leave the account
+unblocked.
 
 ## Logging
 

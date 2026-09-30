@@ -1,5 +1,6 @@
 const Card = require("../models/Card");
 const { validateCard } = require("../validation/cardValidation");
+const { validateBizNumber } = require("../validation/bizNumberValidation");
 const generateBizNumber = require("../utils/generateBizNumber");
 
 const getAllCards = async (req, res, next) => {
@@ -66,9 +67,7 @@ const updateCard = async (req, res, next) => {
 		const updatedCard = await Card.findByIdAndUpdate(
 			req.params.id,
 			req.body,
-			{
-				new: true,
-			},
+			{ new: true },
 		);
 
 		res.status(200).send(updatedCard);
@@ -115,6 +114,33 @@ const deleteCard = async (req, res, next) => {
 	}
 };
 
+// admin can assign a card a new business number,
+// as long as no other card already has it
+const changeBizNumber = async (req, res, next) => {
+	try {
+		const { error } = validateBizNumber(req.body);
+		if (error) return res.status(400).send(error.details[0].message);
+
+		const card = await Card.findById(req.params.id);
+		if (!card) return res.status(404).send("Card not found");
+
+		const existingCard = await Card.findOne({
+			bizNumber: req.body.bizNumber,
+		});
+		if (existingCard && existingCard._id.toString() !== card._id.toString())
+			return res
+				.status(400)
+				.send("This business number is already taken");
+
+		card.bizNumber = req.body.bizNumber;
+		await card.save();
+
+		res.status(200).send(card);
+	} catch (error) {
+		next(error);
+	}
+};
+
 module.exports = {
 	getAllCards,
 	getMyCards,
@@ -123,4 +149,5 @@ module.exports = {
 	updateCard,
 	likeCard,
 	deleteCard,
+	changeBizNumber,
 };

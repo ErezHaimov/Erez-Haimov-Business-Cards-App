@@ -32,6 +32,8 @@ const userSchema = new mongoose.Schema({
 	},
 	isAdmin: { type: Boolean, default: false },
 	isBusiness: { type: Boolean, default: false },
+	failedLoginAttempts: { type: Number, default: 0 },
+	blockedUntil: { type: Date, default: null },
 	createdAt: { type: Date, default: Date.now },
 });
 

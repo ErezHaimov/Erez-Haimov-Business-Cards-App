@@ -1,9 +1,12 @@
 const bcrypt = require("bcryptjs");
 const User = require("../models/User");
 const { validateUser } = require("../validation/userValidation");
-const generateToken = require("../utils/generateToken");
-const { validateLogin } = require("../validation/loginValidation");
 const { validateUserUpdate } = require("../validation/userUpdateValidation");
+const { validateLogin } = require("../validation/loginValidation");
+const generateToken = require("../utils/generateToken");
+
+const BLOCK_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours
+const MAX_FAILED_ATTEMPTS = 3;
 
 const registerUser = async (req, res, next) => {
 	try {
@@ -37,8 +40,38 @@ const loginUser = async (req, res, next) => {
 		const user = await User.findOne({ email: email.toLowerCase() });
 		if (!user) return res.status(400).send("Invalid email or password");
 
+		// block login for 24h after 3 consecutive failed attempts
+		if (user.blockedUntil && user.blockedUntil > new Date()) {
+			return res
+				.status(403)
+				.send(
+					`Too many failed login attempts. Try again after ${user.blockedUntil.toISOString()}`,
+				);
+		}
+
 		const isValid = await bcrypt.compare(password, user.password);
-		if (!isValid) return res.status(400).send("Invalid email or password");
+
+		if (!isValid) {
+			user.failedLoginAttempts = (user.failedLoginAttempts || 0) + 1;
+
+			if (user.failedLoginAttempts >= MAX_FAILED_ATTEMPTS) {
+				user.blockedUntil = new Date(Date.now() + BLOCK_DURATION_MS);
+				await user.save();
+				return res
+					.status(403)
+					.send(
+						`Too many failed login attempts. Account blocked until ${user.blockedUntil.toISOString()}`,
+					);
+			}
+
+			await user.save();
+			return res.status(400).send("Invalid email or password");
+		}
+
+		// Successful login - reset the failed-attempt counter and any block
+		user.failedLoginAttempts = 0;
+		user.blockedUntil = null;
+		await user.save();
 
 		const token = generateToken(user);
 		res.status(200).send(token);
@@ -83,7 +116,6 @@ const updateUser = async (req, res, next) => {
 
 		const updateData = { ...req.body };
 
-		// Only hash and update the password if the client actually sent a new one
 		if (req.body.password) {
 			const salt = await bcrypt.genSalt(10);
 			updateData.password = await bcrypt.hash(req.body.password, salt);
